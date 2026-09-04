@@ -1,0 +1,41 @@
+# ============================================================================
+# Reportes generados. NUNCA commitear una corrida real: contienen cuentas de
+# servicio, IPs internas, nombres de shares, thumbprints y puertos en escucha.
+# ============================================================================
+AsBuilt_*.html
+AsBuilt_*.json
+AsBuilt_*.md
+AsBuilt_*_csv/
+Reporte_*.html
+_flota_index.html
+_flota_hallazgos.csv
+_flota_inalcanzables.csv
+
+# Baselines guardados para comparacion de drift
+baselines/
+*.baseline.json
+
+# Salidas de prueba
+out/
+output/
+test-output/
+
+# PowerShell
+*.ps1xml
+PSScriptAnalyzerSettings.psd1.bak
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Windows
+Thumbs.db
+desktop.ini
+[Dd]esktop.ini
+
+# macOS / Linux
+.DS_Store
+*.bak
+*.tmp
