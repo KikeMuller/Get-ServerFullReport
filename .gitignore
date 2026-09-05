@@ -39,3 +39,7 @@ desktop.ini
 .DS_Store
 *.bak
 *.tmp
+
+# Contexto de trabajo local para Claude Code (no forma parte del repo publico)
+CLAUDE.md
+.claude/

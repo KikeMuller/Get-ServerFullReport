@@ -23,7 +23,7 @@ Un solo archivo. Sin módulos externos, sin instalación, sin conexión a intern
 </p>
 </details>
 
-> **[Ver un reporte de ejemplo completo](docs/reporte-ejemplo.html)** — descargalo y abrilo en el navegador (GitHub no renderiza HTML embebido).
+> **[Ver un reporte de ejemplo completo](docs/reporte-ejemplo.html)** — descárgalo y ábrelo en el navegador (GitHub no renderiza HTML embebido).
 
 ---
 
@@ -60,13 +60,13 @@ Este script cubre ese hueco: un archivo que se copia al servidor, se ejecuta, y 
 - **Un OK solo se emite si la regla realmente pudo evaluar el dato.** Si la sección no existe, el rol no está o la consulta falló, el tópico se calla. Afirmar que algo está bien sin haberlo verificado es peor que no decir nada.
 - **HTML autocontenido**: TOC lateral generado automáticamente, buscador global, tablas ordenables y filtrables, tema claro/oscuro y CSS de impresión para el anexo firmado. Sin CDNs ni recursos externos.
 - **Salida en JSON, CSV y Markdown** además del HTML, con hash SHA256 para valer como evidencia.
-- **Comparación contra una corrida anterior**: qué software, servicios, puertos, reglas de firewall y cuentas cambiaron.
+- **Comparación contra una ejecución anterior**: qué software, servicios, puertos, reglas de firewall y cuentas cambiaron.
 - **Modo flota**: corre contra decenas de servidores en paralelo y genera un índice consolidado.
 - **Solo lectura**: no modifica absolutamente nada en el equipo auditado.
 
 ## Instalación
 
-No hay instalación. Descargá el archivo y ejecutalo:
+No hay instalación. Descarga el archivo y ejecútalo:
 
 ```powershell
 # Opción 1: clonar
@@ -135,7 +135,7 @@ El script devuelve un código de salida útil para encadenar: `0` todo bien, `1`
 | `-Format` | `string[]` | `HTML,JSON` | `HTML`, `JSON`, `CSV`, `Markdown`. Acepta lista separada por coma. |
 | `-Sections` | `string[]` | todas | Prefijos a incluir, ej. `1.5,1.11`. |
 | `-SkipSections` | `string[]` | ninguna | Prefijos a omitir. Útil para saltear lo lento. |
-| `-BaselinePath` | `string` | — | JSON de una corrida anterior. Agrega la sección de cambios. |
+| `-BaselinePath` | `string` | — | JSON de una ejecución anterior. Agrega la sección de cambios. |
 | `-Redact` | `switch` | off | Enmascara IPs, cuentas, rutas, seriales y thumbprints. |
 | `-ThrottleLimit` | `int` | `8` | Equipos en paralelo en modo flota. |
 | `-Credential` | `pscredential` | — | Credenciales para los equipos remotos. |
@@ -208,7 +208,7 @@ Agrega una sección con lo que cambió desde ese JSON: software, servicios, puer
 
 **Una cuenta nueva en el grupo Administradores locales se reporta como CRIT.**
 
-Es lo que convierte el script en una herramienta de gestión de cambios: guardá el JSON de cada corrida y la siguiente te dice qué pasó en el medio.
+Es lo que convierte el script en una herramienta de gestión de cambios: guarda el JSON de cada ejecución y la siguiente te dice qué pasó en el medio.
 
 ## Modo flota
 
@@ -244,11 +244,11 @@ Probado en Windows Server 2016, 2019, 2022 y Windows 10/11.
 
 **El script no modifica nada** en el equipo auditado: solo consulta. No usa `Set-`, `New-`, `Remove-`, `Start-` ni `Stop-` sobre el sistema.
 
-**El reporte contiene información sensible**: cuentas de servicio, direcciones IP internas, nombres de shares, thumbprints de certificados, puertos en escucha. Tratalo con el mismo cuidado que a cualquier documento de arquitectura:
+**El reporte contiene información sensible**: cuentas de servicio, direcciones IP internas, nombres de shares, thumbprints de certificados, puertos en escucha. Trátalo con el mismo cuidado que a cualquier documento de arquitectura:
 
-- Guardalo en un share con ACL restringida, no lo mandes por correo.
-- Usá `-Redact` para las versiones que salen del equipo de infraestructura.
-- La contraseña de `-Credential` nunca se escribe al JSON; la cuenta se registra enmascarada si corrés con `-Redact`.
+- Guárdalo en un share con ACL restringida, no lo mandes por correo.
+- Usa `-Redact` para las versiones que salen del equipo de infraestructura.
+- La contraseña de `-Credential` nunca se escribe al JSON; la cuenta se registra enmascarada si ejecutas con `-Redact`.
 
 Cada reporte incluye metadatos de auditoría (quién lo generó, desde qué equipo, versión del script) y el hash SHA256 del archivo.
 
@@ -263,10 +263,10 @@ Cada reporte incluye metadatos de auditoría (quién lo generó, desde qué equi
 
 Los reportes de bugs y los pull requests son bienvenidos. Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**Si vas a reportar un bug, adjuntá el JSON de la corrida** (con `-Redact` si tiene datos sensibles). Contiene todo lo recolectado más el log de ejecución embebido, que es lo que permite reproducir el problema sin acceso a tu equipo.
+**Si vas a reportar un bug, adjunta el JSON de la ejecución** (con `-Redact` si tiene datos sensibles). Contiene todo lo recolectado más el log de ejecución embebido, que es lo que permite reproducir el problema sin acceso a tu equipo.
 
 ## Licencia
 
 [MIT](LICENSE) — © 2026 Enrique Müller.
 
-Se entrega tal cual, sin garantía. Es una herramienta de solo lectura, pero probala en un equipo de laboratorio antes de correrla masivamente en producción.
+Se entrega tal cual, sin garantía. Es una herramienta de solo lectura, pero pruébala en un equipo de laboratorio antes de ejecutarla masivamente en producción.
