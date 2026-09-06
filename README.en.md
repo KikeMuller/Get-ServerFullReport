@@ -1,6 +1,7 @@
 <!-- synced-with: README.md @ 67455a7 (2026-09-05) -->
 
-[Español](README.md) · **English**
+[![README en español](https://img.shields.io/badge/README-Espa%C3%B1ol-lightgrey)](README.md)
+[![README in English](https://img.shields.io/badge/README-English-blue)](README.en.md)
 
 # Get-ServerFullReport
 

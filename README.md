@@ -1,4 +1,5 @@
-**Español** · [English](README.en.md)
+[![README en español](https://img.shields.io/badge/README-Espa%C3%B1ol-blue)](README.md)
+[![README in English](https://img.shields.io/badge/README-English-lightgrey)](README.en.md)
 
 # Get-ServerFullReport
 
