@@ -1,3 +1,5 @@
+**Español** · [English](README.en.md)
+
 # Get-ServerFullReport
 
 **Inventario as-built y health check de servidores Windows en un solo `.ps1`.**
