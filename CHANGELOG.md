@@ -4,6 +4,17 @@ Todos los cambios notables de este proyecto se documentan acá.
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+Correcciones surgidas de ejecutar el script completo contra un controlador de dominio real (Windows Server 2025, PowerShell 5.1) por WinRM.
+
+### Corregido
+
+- **En toda ejecución remota, la detección de capacidades quedaba con todo en `False`.** `Remove-PropiedadesDeRemoting` copiaba las propiedades de un hashtable (`Count`, `Keys`, `Values`) en vez de sus entradas. Efecto: un DC con DNS instalado salía con la sección 1.9 diciendo "El rol de servidor DNS no esta instalado", y se omitían las secciones dependientes de rol. Ahora un hashtable pasa intacto.
+- **Los enums remotos llegaban como `1`/`0`.** Un enum que vuelve de una PSSession es un PSObject cuyo valor base es el entero. Las reglas de firewall que comparan contra `'False'` o `'Allow'` nunca coincidían, así que un perfil de firewall deshabilitado no generaba hallazgo en equipos remotos. Ahora se normalizan a su nombre (`True`, `Allow`), igual que en ejecución local.
+- **El JSON de una ejecución remota no se podía volver a leer, y `-BaselinePath` fallaba.** Los mismos enums se serializaban como `{"value":1,"Value":"True"}`, dos claves que solo difieren en mayúsculas. La 3.1.0 lo cubría solo en parte: el lector reintentaba únicamente si el mensaje de error contenía el texto en inglés `different casing`, así que en un SO en español nunca reintentaba. El exportador ahora escribe el nombre del enum, y el lector reintenta ante cualquier fallo, lo que además recupera los JSON ya guardados con la 3.2.0 y anteriores.
+- **Falso CRIT "Volumen D con espacio crítico" sobre una ISO/DVD montada.** La exclusión de unidades ópticas leía una columna `DriveType` que la sección 1.5.2 nunca recolectaba, y una ISO de ~7 GB no cae en el filtro por tamaño. La sección ahora incluye `DriveType`, la exclusión también reconoce `CDFS`/`UDF`, y el mismo criterio se aplica al espacio libre mínimo del resumen de flota.
+
 ## [3.2.0] — 2026-09-04
 
 Correcciones surgidas de ejecutar el script completo de punta a punta, en vez de sus funciones por separado.

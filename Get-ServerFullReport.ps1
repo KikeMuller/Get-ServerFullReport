@@ -524,6 +524,35 @@ function Invoke-RemoteViaJob {
     }
 }
 
+function Get-NombreDeEnum {
+    <#
+        Devuelve el NOMBRE (texto) de un valor enum, o $null si $Value no es un
+        enum. Cubre los dos casos:
+          - enum real (ejecucion local): ToString() da el nombre.
+          - enum que vuelve de una PSSession: llega deserializado, como un
+            PSObject cuyo valor base es el entero (ToString() da '1', no
+            'True'), con TypeNames 'Deserialized.System.Enum' y una
+            ScriptProperty 'Value' que trae el nombre.
+        Sin esta normalizacion un enum remoto se veia como '1'/'0' en las tablas,
+        las reglas que comparan contra 'True'/'False'/'Allow' nunca coincidian,
+        y ConvertTo-Json lo serializaba como {"value":1,"Value":"True"}: dos
+        claves que solo difieren en mayusculas, que ni ConvertFrom-Json puede
+        leer (dejaba inutilizable -BaselinePath).
+    #>
+    param($Value)
+
+    if ($null -eq $Value) { return $null }
+    if ($Value -is [System.Enum]) { return $Value.ToString() }
+    try {
+        if ($Value -isnot [string] -and ($Value.PSObject.TypeNames -contains 'Deserialized.System.Enum')) {
+            $propNombre = $Value.PSObject.Properties['Value']
+            if ($propNombre -and "$($propNombre.Value)" -ne '') { return "$($propNombre.Value)" }
+            return "$($Value.PSObject.BaseObject)"
+        }
+    } catch {}
+    return $null
+}
+
 function Remove-PropiedadesDeRemoting {
     <#
         Quita las propiedades que agrega PowerShell Remoting a cada objeto
@@ -539,6 +568,18 @@ function Remove-PropiedadesDeRemoting {
     $salida = New-Object System.Collections.ArrayList
 
     foreach ($item in @($InputObject)) {
+        # Un hashtable / diccionario se devuelve tal cual. Si pasara por la
+        # copia de propiedades de mas abajo, quedaria convertido en un PSObject
+        # con las propiedades del CONTENEDOR (Count, Keys, Values, SyncRoot...)
+        # y sin sus entradas: Get-TargetCapabilities recibia asi todas las
+        # capacidades en $false en cualquier corrida remota.
+        if ($item -is [System.Collections.IDictionary]) {
+            [void]$salida.Add($item); continue
+        }
+        if ($item -is [ValueType]) {
+            $nombreEnum = Get-NombreDeEnum $item
+            if ($null -ne $nombreEnum) { [void]$salida.Add($nombreEnum); continue }
+        }
         if ($null -eq $item -or $item -is [string] -or $item -is [ValueType]) {
             [void]$salida.Add($item); continue
         }
@@ -546,7 +587,12 @@ function Remove-PropiedadesDeRemoting {
             $limpio = New-Object PSObject
             foreach ($prop in $item.PSObject.Properties) {
                 if ($basura -contains $prop.Name) { continue }
-                Add-Member -InputObject $limpio -MemberType NoteProperty -Name $prop.Name -Value $prop.Value -Force
+                $valorProp = $prop.Value
+                if ($null -ne $valorProp -and $valorProp -isnot [string]) {
+                    $nombreEnum = Get-NombreDeEnum $valorProp
+                    if ($null -ne $nombreEnum) { $valorProp = $nombreEnum }
+                }
+                Add-Member -InputObject $limpio -MemberType NoteProperty -Name $prop.Name -Value $valorProp -Force
             }
             [void]$salida.Add($limpio)
         } catch {
@@ -2985,7 +3031,13 @@ function Get-VolumenesStorageExcluidos {
             $esRemovibleOptico = ($tipoUnidad -match '(?i)CD-?ROM|DVD|Removable|Removible|Optic')
             $sinTamano = ($null -eq $total -or $total -lt 1)
             $sinFileSystem = ($fs -eq '')
-            if ($sinTamano -or $esRemovibleOptico -or $sinFileSystem) { [void]$excluidas.Add($letra) }
+            # Respaldo por sistema de archivos: una ISO/DVD montada (CDFS o UDF,
+            # p. ej. la ISO de instalacion de Windows Server, ~7 GB) tiene tamano
+            # real y 0 GB libres, asi que ni el tamano ni el FileSystem vacio la
+            # excluyen. DriveType lo resuelve, pero un JSON de una version anterior
+            # o un colector sin esa columna no lo trae.
+            $esOpticoPorFS = ($fs -match '^(?i:CDFS|UDF)$')
+            if ($sinTamano -or $esRemovibleOptico -or $sinFileSystem -or $esOpticoPorFS) { [void]$excluidas.Add($letra) }
         }
     } catch {}
     # Operador coma unario: sin el, PowerShell ENUMERA el HashSet al
@@ -4073,6 +4125,12 @@ function ConvertTo-JsonSafeValue {
         # propiedades pegadas.
         return "$Value"
     }
+    # Los enums salen como su NOMBRE ('True', 'Allow'), igual en local y en
+    # remoto. Un enum remoto deserializado se serializaria como
+    # {"value":1,"Value":"True"} (ver Get-NombreDeEnum) y uno local como un
+    # numero, lo que ademas haria distintos entre si un baseline local y uno remoto.
+    $nombreEnum = Get-NombreDeEnum $Value
+    if ($null -ne $nombreEnum) { return $nombreEnum }
     if ($Value -is [System.Collections.IDictionary]) {
         $nuevo = [ordered]@{}
         foreach ($k in $Value.Keys) { $nuevo[$k] = ConvertTo-JsonSafeValue -Value $Value[$k] -Profundidad ($Profundidad + 1) }
@@ -4464,12 +4522,18 @@ function Read-ReportJsonFile {
         try {
             return ($raw | ConvertFrom-Json -ErrorAction Stop)
         } catch {
-            if ("$($_.Exception.Message)" -notmatch 'different casing') { throw }
-            Write-ReportLog -Message 'El JSON contiene claves que solo difieren en mayusculas (enum serializado); se normaliza y se reintenta.' -Level Debug
+            # No se filtra por el TEXTO del error: PowerShell lo localiza
+            # ('different casing' en ingles, 'distintas mayusculas' en PS 7 en
+            # espanol, 'claves duplicadas' en PS 5.1), y con un filtro por texto
+            # el reintento solo funcionaba en un SO en ingles. Se reintenta ante
+            # cualquier fallo; si la normalizacion no cambia nada, el JSON esta
+            # roto por otra causa y se relanza el error original.
             $normalizado = [regex]::Replace(
                 $raw,
                 '\{\s*"value"\s*:\s*[^,}]+,\s*"Value"\s*:\s*("(?:[^"\\]|\\.)*"|[^}]+)\s*\}',
                 { param($m) $m.Groups[1].Value })
+            if ($normalizado -ceq $raw) { throw }
+            Write-ReportLog -Message 'El JSON contiene claves que solo difieren en mayusculas (enum serializado por una version anterior); se normaliza y se reintenta.' -Level Debug
             return ($normalizado | ConvertFrom-Json -ErrorAction Stop)
         }
     } catch {
@@ -4756,7 +4820,15 @@ $script:FleetWorker = {
         try {
             $volSec = $data.Sections | Where-Object { $_.Id -eq '1.5.2' } | Select-Object -First 1
             if ($volSec -and $volSec.Data) {
-                $resultado.EspacioLibreMinGB = (@($volSec.Data) | Measure-Object -Property LibreGB -Minimum).Minimum
+                # Sin unidades opticas / ISO montadas (0 GB libres por naturaleza).
+                $volsFijos = @($volSec.Data | Where-Object {
+                    "$($_.DriveType)" -notmatch 'CD-?ROM|DVD|Removable|Removible|Optic' -and
+                    "$($_.FileSystem)" -notmatch '^(?i:CDFS|UDF)$' -and
+                    "$($_.FileSystem)".Trim() -ne '' -and
+                    [double]$_.TotalGB -ge 1 })
+                if ($volsFijos.Count -gt 0) {
+                    $resultado.EspacioLibreMinGB = ($volsFijos | Measure-Object -Property LibreGB -Minimum).Minimum
+                }
             }
         } catch {}
         try {
@@ -5349,7 +5421,7 @@ Measure-Section '1.5.1 Discos locales' {
 Measure-Section '1.5.2 Volumenes del host' {
     $data = Invoke-Remote -TimeoutSec 60 -ScriptBlock {
         try {
-            Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | Select-Object DriveLetter, FileSystemLabel, FileSystem, HealthStatus,
+            Get-Volume -ErrorAction Stop | Where-Object { $_.DriveLetter } | Select-Object DriveLetter, FileSystemLabel, FileSystem, DriveType, HealthStatus,
                 @{N='TotalGB';E={[math]::Round($_.Size/1GB,2)}},
                 @{N='LibreGB';E={[math]::Round($_.SizeRemaining/1GB,2)}},
                 @{N='LibrePct';E={ if ($_.Size -gt 0) { [math]::Round(($_.SizeRemaining/$_.Size)*100,1) } else { 0 } }}
@@ -8486,7 +8558,12 @@ function Invoke-SingleTargetReport {
         try {
             $vols = ConvertTo-RowArray (Get-SectionData -Id '1.5.2')
             $peor = $null
+            $volsExcl = Get-VolumenesStorageExcluidos
             foreach ($v in $vols) {
+                # Mismo criterio que las reglas de storage: una unidad optica o
+                # una ISO montada (0% libre) no es espacio agotado.
+                $letraVol = "$(Get-Prop $v @('DriveLetter', 'Unidad', 'Letra'))".Trim().TrimEnd(':').ToUpperInvariant()
+                if ($letraVol -and $volsExcl.Contains($letraVol)) { continue }
                 $pctRaw = Get-Prop $v @('LibrePct', 'PctLibre', 'PorcentajeLibre', 'FreePercent')
                 if ($null -eq $pctRaw) { continue }
                 $pct = ConvertTo-DoubleSafe $pctRaw

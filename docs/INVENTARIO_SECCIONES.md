@@ -29,7 +29,7 @@ vez de objetos (rol no instalado, error, "no aplica"), se indica.
 | 1.4.4 | Servidores DNS Configurados por Interfaz | InterfaceAlias, ServerAddresses | 02 |
 | 1.4.5 | MTU de Adaptadores de Red | InterfaceAlias, NlMtu, Dhcp, ConnectionState | 02 |
 | 1.5.1 | Discos Locales | DeviceID, Model, InterfaceType, SerialNumber, MediaType, TamanoGB, Partitions | 02 |
-| 1.5.2 | Volumenes del Host | DriveLetter, FileSystemLabel, FileSystem, HealthStatus, TotalGB, LibreGB, LibrePct | 02 |
+| 1.5.2 | Volumenes del Host | DriveLetter, FileSystemLabel, FileSystem, DriveType (Fixed, CD-ROM, Removable...), HealthStatus, TotalGB, LibreGB, LibrePct | 02 |
 | 1.6 | Servidor IIS (rol ausente) | string | 02 |
 | 1.6.1 | Application Pools de IIS | Name, EstadoActual, managedRuntimeVersion, managedPipelineMode, IdentityType, IdentityUser, IdleTimeoutMin, PeriodicRestartMin | 02 |
 | 1.6.2 | Sitios de IIS - Resumen | Name, ID, State, PhysicalPath, Bindings, ApplicationPool | 02 |
