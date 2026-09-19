@@ -4,7 +4,7 @@ Todos los cambios notables de este proyecto se documentan acá.
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue [Versionado Semántico](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [3.2.1] — 2026-09-19
 
 Correcciones surgidas de ejecutar el script completo contra un controlador de dominio real (Windows Server 2025, PowerShell 5.1) por WinRM.
 
@@ -90,6 +90,7 @@ Reescritura completa. De 1.126 a más de 8.000 líneas.
 
 Versión inicial: reporte HTML con TOC escrito a mano, ~40 secciones, detección de roles IIS/DHCP/DNS/File Server/RDS/WSUS, y secciones de seguridad y entornos Python.
 
+[3.2.1]: https://github.com/KikeMuller/Get-ServerFullReport/releases/tag/v3.2.1
 [3.2.0]: https://github.com/KikeMuller/Get-ServerFullReport/releases/tag/v3.2.0
 [3.1.0]: https://github.com/KikeMuller/Get-ServerFullReport/releases/tag/v3.1.0
 [3.0.0]: https://github.com/KikeMuller/Get-ServerFullReport/releases/tag/v3.0.0

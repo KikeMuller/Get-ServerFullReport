@@ -228,7 +228,7 @@ param(
 # =============================================================================
 #region CORE-Utilidades
 
-$script:ScriptVersion = '3.2.0'
+$script:ScriptVersion = '3.2.1'
 
 # --- Normalizacion de -Format -------------------------------------------------
 # Acepta 'HTML,JSON', 'html json', @('HTML','JSON') y cualquier combinacion.
